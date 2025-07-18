@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: casinofound-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: casinofound-mongodb
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: POLYGON_RPC_URL
+        value: https://polygon-rpc.com
+      - key: CFD_TOKEN_ADDRESS
+        value: 0x7fE9eE1975263998D7BfD7ed46CAD44Ee62A63bE
+      - key: AFFILIATE_MANAGER_ADDRESS
+        value: 0x2f6737CFDE18D201C3300C1C87e70f620C38F68C
+      - key: ICO_PHASE1_ADDRESS
+        value: 0x8008A571414ebAF2f965a5a8d34D78cEfa8BD8bD
+      - key: USDT_ADDRESS
+        value: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F
+      - key: ADMIN_WALLET_ADDRESS
+        value: 0xSeuEnderecoDeAdmin
+
+  - type: web
+    name: casinofound-frontend
+    env: static
+    rootDir: frontend/casinofound-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://casinofound-backend.onrender.com
+      - key: VITE_NETWORK_ID
+        value: 137
+      - key: VITE_CFD_TOKEN_ADDRESS
+        value: 0x7fE9eE1975263998D7BfD7ed46CAD44Ee62A63bE
+
+databases:
+  - name: casinofound-mongodb
+    databaseName: casinofound
+    user: casinofound_user
+
+

@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # Banco de dados MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: casinofound-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-casinofound}
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      - casinofound-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: casinofound-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017/${MONGO_DB_NAME:-casinofound}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      POLYGON_RPC_URL: ${POLYGON_RPC_URL:-https://polygon-rpc.com}
+      CFD_TOKEN_ADDRESS: ${CFD_TOKEN_ADDRESS:-0x7fE9eE1975263998D7BfD7ed46CAD44Ee62A63bE}
+      AFFILIATE_MANAGER_ADDRESS: ${AFFILIATE_MANAGER_ADDRESS:-0x2f6737CFDE18D201C3300C1C87e70f620C38F68C}
+      ICO_PHASE1_ADDRESS: ${ICO_PHASE1_ADDRESS:-0x8008A571414ebAF2f965a5a8d34D78cEfa8BD8bD}
+      USDT_ADDRESS: ${USDT_ADDRESS:-0xc2132D05D31c914a87C6611C10748AEb04B58e8F}
+      ADMIN_WALLET_ADDRESS: ${ADMIN_WALLET_ADDRESS:-}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - casinofound-network
+
+  # Frontend React
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: casinofound-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - casinofound-network
+
+  # Redis para cache (opcional)
+  redis:
+    image: redis:7-alpine
+    container_name: casinofound-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - casinofound-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  casinofound-network:
+    driver: bridge
+
